@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}Chat Room{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-sidebar">
+        <div class="sidebar-header">
+            <h3>Online Devices</h3>
+            <div class="online-counter">
+                <span id="online-count">0</span> online
+            </div>
+        </div>
+        <div class="online-users" id="online-users">
+            <!-- Devices will be added here dynamically -->
+        </div>
+    </div>
+    
+    <div class="chat-main">
+        <div class="chat-header">
+            <h2>Zephy Chat</h2>
+            <p class="user-info">Your device: <span id="current-username">{{ session.device_name }}</span></p>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            <!-- Messages will be added here dynamically -->
+        </div>
+        
+        <div class="chat-input-container">
+            <form id="chat-form">
+                <div class="message-input-wrapper">
+                    <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+                    <div class="input-actions">
+                        <label for="image-upload" class="image-upload-label">
+                            <i class="fas fa-image"></i>
+                        </label>
+                        <input type="file" id="image-upload" accept="image/*" style="display: none;">
+                        <button type="submit" class="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+            <div id="image-preview-container" class="image-preview-container" style="display: none;">
+                <div class="image-preview">
+                    <img id="image-preview" src="" alt="Image Preview">
+                    <button id="remove-image" class="remove-image-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    // Store user data
+    const currentUser = {
+        username: "{{ session.device_name }}",
+        userId: "{{ session.device_id }}",
+        device: "{{ session.device_type }}"
+    };
+    
+    // Device icon mapping
+    const deviceIcons = {
+        'desktop': '<i class="fas fa-desktop"></i>',
+        'mobile': '<i class="fas fa-mobile-alt"></i>',
+        'tablet': '<i class="fas fa-tablet-alt"></i>'
+    };
+    
+    // Store online users
+    const onlineUsers = new Map();
+    
+    // Initialize local storage for messages if not exists
+    if (!localStorage.getItem('zephyMessages')) {
+        localStorage.setItem('zephyMessages', JSON.stringify([]));
+    }
+    
+    // Connect to WebSocket server
+    const socket = io();
+    
+    // DOM elements
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const messagesContainer = document.getElementById('chat-messages');
+    const onlineUsersContainer = document.getElementById('online-users');
+    const onlineCountElement = document.getElementById('online-count');
+    const imageUpload = document.getElementById('image-upload');
+    const imagePreviewContainer = document.getElementById('image-preview-container');
+    const imagePreview = document.getElementById('image-preview');
+    const removeImageBtn = document.getElementById('remove-image');
+    
+    // Load messages from local storage
+    function loadMessages() {
+        const messages = JSON.parse(localStorage.getItem('zephyMessages') || '[]');
+        messages.forEach(message => {
+            appendMessage(message);
+        });
+        
+        // Scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // Save message to local storage
+    function saveMessage(message) {
+        const messages = JSON.parse(localStorage.getItem('zephyMessages') || '[]');
+        messages.push(message);
+        
+        // Keep only the last 100 messages to avoid storage issues
+        if (messages.length > 100) {
+            messages.shift();
+        }
+        
+        localStorage.setItem('zephyMessages', JSON.stringify(messages));
+    }
+    
+    // Append message to chat
+    function appendMessage(data) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        
+        // Check if message is from current user
+        if (data.user_id === currentUser.userId) {
+            messageDiv.classList.add('message-outgoing');
+        } else {
+            messageDiv.classList.add('message-incoming');
+        }
+        
+        // Format timestamp
+        const timestamp = new Date(data.timestamp);
+        const formattedTime = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Get device icon
+        const deviceIcon = deviceIcons[data.device] || '';
+        
+        // Create message content
+        let messageContent = '';
+        
+        // Check if message has image
+        if (data.image_url) {
+            messageContent = `
+                <div class="message-image">
+                    <img src="${data.image_url}" alt="Shared image" loading="lazy">
+                </div>
+            `;
+        } else if (data.message) {
+            messageContent = `
+                <div class="message-text">${data.message}</div>
+            `;
+        }
+        
+        // Full message structure
+        messageDiv.innerHTML = `
+            <div class="message-header">
+                <span class="message-username">${data.username}</span>
+                <span class="message-device">${deviceIcon}</span>
+            </div>
+            ${messageContent}
+            <div class="message-footer">
+                <span class="message-time">${formattedTime}</span>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // Update online users list
+    function updateOnlineUsers() {
+        onlineUsersContainer.innerHTML = '';
+        
+        // Update online counter
+        onlineCountElement.textContent = onlineUsers.size;
+        
+        onlineUsers.forEach(user => {
+            const userDiv = document.createElement('div');
+            userDiv.classList.add('user-item');
+            
+            const deviceIcon = deviceIcons[user.device] || '';
+            
+            userDiv.innerHTML = `
+                <span class="user-device">${deviceIcon}</span>
+                <span class="user-name">${user.username}</span>
+            `;
+            
+            onlineUsersContainer.appendChild(userDiv);
+        });
+    }
+    
+    // Handle image upload preview
+    imageUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreviewContainer.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Remove image preview
+    removeImageBtn.addEventListener('click', () => {
+        imageUpload.value = '';
+        imagePreview.src = '';
+        imagePreviewContainer.style.display = 'none';
+    });
+    
+    // Send message
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const message = messageInput.value.trim();
+        const file = imageUpload.files[0];
+        
+        if (!message && !file) return;
+        
+        // Handle file upload if present
+        if (file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                socket.emit('send_image', {
+                    image_url: data.url
+                });
+                
+                // Clear image preview
+                imageUpload.value = '';
+                imagePreview.src = '';
+                imagePreviewContainer.style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Error uploading image:', error);
+            });
+        }
+        
+        // Send text message if present
+        if (message) {
+            socket.emit('send_message', {
+                message: message
+            });
+            
+            // Clear message input
+            messageInput.value = '';
+        }
+    });
+    
+    // Socket events
+    socket.on('connect', () => {
+        console.log('Connected to server');
+        loadMessages();
+        
+        // Request current online users
+        socket.emit('get_online_users');
+    });
+    
+    socket.on('all_online_users', (data) => {
+        // Clear existing users
+        onlineUsers.clear();
+        
+        // Add all users
+        data.users.forEach(user => {
+            onlineUsers.set(user.user_id, {
+                username: user.username,
+                device: user.device
+            });
+        });
+        
+        // Update the UI
+        updateOnlineUsers();
+    });
+    
+    socket.on('user_joined', (data) => {
+        // Add user to online users map
+        onlineUsers.set(data.user_id, {
+            username: data.username,
+            device: data.device
+        });
+        
+        // Update online users list
+        updateOnlineUsers();
+        
+        // Show notification
+        if (data.user_id !== currentUser.userId) {
+            const joinMessage = {
+                username: 'System',
+                user_id: 'system',
+                message: `${data.username} has joined the chat`,
+                timestamp: data.timestamp,
+                device: 'desktop'
+            };
+            
+            appendMessage(joinMessage);
+        }
+    });
+    
+    socket.on('user_left', (data) => {
+        // Remove user from online users map
+        onlineUsers.delete(data.user_id);
+        
+        // Update online users list
+        updateOnlineUsers();
+        
+        // Show notification
+        const leaveMessage = {
+            username: 'System',
+            user_id: 'system',
+            message: `${data.username} has left the chat`,
+            timestamp: data.timestamp,
+            device: 'desktop'
+        };
+        
+        appendMessage(leaveMessage);
+    });
+    
+    socket.on('new_message', (data) => {
+        appendMessage(data);
+        saveMessage(data);
+    });
+    
+    socket.on('new_image', (data) => {
+        appendMessage(data);
+        saveMessage(data);
+    });
+</script>
+{% endblock %} 

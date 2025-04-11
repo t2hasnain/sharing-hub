@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="hero-content">
+        <h1 class="hero-title">Welcome to <span class="highlight">Zephy</span></h1>
+        <p class="hero-subtitle">Connect and share high-quality images instantly</p>
+        <p class="creator-credit">Created by <a href="https://www.fiverr.com/hasnainff999/" target="_blank">t2hasnain</a></p>
+        
+        <div class="join-form-container">
+            <a href="/join" class="btn btn-primary">Join Chat Now</a>
+            <p class="join-note">No signup required - you'll be assigned a device name automatically</p>
+        </div>
+    </div>
+</div>
+
+<div class="sharing-hub">
+    <h2 class="section-title">Sharing Hub</h2>
+    <p class="hub-subtitle">All devices on the same network can see and manage these files</p>
+    <p class="hub-subtitle">reload after upload text and image and delete for see changes</p>
+    <div class="sharing-controls">
+        <div class="tab-controls">
+            <button class="tab-btn active" data-tab="all">All Items</button>
+            <button class="tab-btn" data-tab="text">Text</button>
+            <button class="tab-btn" data-tab="images">Images</button>
+        </div>
+        
+        <div class="action-controls">
+            <button id="download-all-btn" class="action-btn">
+                <i class="fas fa-download"></i> Download All
+            </button>
+            <button id="add-content-btn" class="action-btn">
+                <i class="fas fa-plus"></i> Add Item
+            </button>
+        </div>
+    </div>
+    
+    <div class="content-container">
+        {% if shared_messages %}
+            <div id="content-grid" class="content-grid">
+                {% for message in shared_messages|reverse %}
+                    <div class="content-item" data-type="{{ 'image' if message.image_url else 'text' }}">
+                        <div class="item-header">
+                            {% if message.device == 'desktop' %}
+                                <i class="fas fa-desktop device-icon"></i>
+                            {% elif message.device == 'mobile' %}
+                                <i class="fas fa-mobile-alt device-icon"></i>
+                            {% elif message.device == 'tablet' %}
+                                <i class="fas fa-tablet-alt device-icon"></i>
+                            {% endif %}
+                            <span class="item-username">{{ message.username }}</span>
+                            <span class="item-time" title="{{ message.timestamp }}">
+                                {{ message.timestamp.split('T')[0] }} {{ message.timestamp.split('T')[1].split('.')[0] }}
+                            </span>
+                        </div>
+                        <div class="item-content">
+                            {% if message.image_url %}
+                                <div class="item-image">
+                                    <img src="{{ message.image_url }}" alt="Shared image">
+                                </div>
+                            {% elif message.message %}
+                                <div class="item-text">
+                                    <p>{{ message.message }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="item-actions">
+                            {% if message.image_url %}
+                                <a href="{{ message.image_url }}" download class="item-action download-btn">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            {% endif %}
+                            <button class="item-action delete-btn" data-id="{{ loop.index0 }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-content">
+                <p>No content has been shared yet. Be the first to share!</p>
+                <button id="empty-add-btn" class="btn btn-secondary">Add Item</button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Content Modal -->
+<div id="add-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add New Item</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-tabs">
+                <button class="modal-tab active" data-type="text">Text</button>
+                <button class="modal-tab" data-type="image">Image</button>
+            </div>
+            
+            <div class="modal-form-container">
+                <form id="text-form" class="modal-form active">
+                    <div class="form-group">
+                        <label for="text-input">Message</label>
+                        <textarea id="text-input" rows="4" placeholder="Type your message here..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Share Text</button>
+                </form>
+                
+                <form id="image-form" class="modal-form">
+                    <div class="form-group">
+                        <label for="image-input">Select Image</label>
+                        <input type="file" id="image-input" accept="image/*">
+                        <div id="modal-preview" class="modal-preview"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Share Image</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <i class="fas fa-comments feature-icon"></i>
+        <h3>Real-time Chat</h3>
+        <p>Chat with multiple users simultaneously with fast, real-time messaging</p>
+    </div>
+    <div class="feature-card">
+        <i class="fas fa-images feature-icon"></i>
+        <h3>High-Quality Images</h3>
+        <p>Share high-resolution images without compression</p>
+    </div>
+    <div class="feature-card">
+        <i class="fas fa-laptop-mobile feature-icon"></i>
+        <h3>Cross-Device</h3>
+        <p>Works seamlessly on desktop, tablet, and mobile devices</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %} 
