@@ -142,34 +142,46 @@ def delete_message():
         data = request.json
         index = int(data.get('id', -1))
         
-        if 0 <= index < len(shared_messages):
-            # Check if it's an image and delete the file if it exists
-            if 'image_url' in shared_messages[index]:
-                image_url = shared_messages[index]['image_url']
-                try:
-                    # Extract filename from URL
-                    filename = image_url.split('/')[-1]
-                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    
-                    # Delete the file if it exists
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-                except Exception as e:
-                    print(f"Error deleting file: {e}")
-            
-            # Remove from shared messages
-            del shared_messages[index]
-            
-            # Save changes
-            save_messages()
-            
-            # Notify all clients
-            socketio.emit('content_deleted', {'id': index}, broadcast=True)
-            
-            return jsonify({'success': True})
+        print(f"DELETE REQUEST: Attempting to delete message at index {index}. Total messages: {len(shared_messages)}")
         
-        return jsonify({'success': False, 'error': 'Invalid index'})
+        # Safety check for index bounds
+        if index < 0 or index >= len(shared_messages):
+            print(f"DELETE ERROR: Index {index} out of bounds (0-{len(shared_messages)-1})")
+            return jsonify({'success': False, 'error': 'Invalid index'})
+            
+        # Get message to delete for logging
+        message_to_delete = shared_messages[index]
+        message_type = "image" if "image_url" in message_to_delete else "text"
+        
+        # Check if it's an image and delete the file if it exists
+        if 'image_url' in message_to_delete:
+            image_url = message_to_delete['image_url']
+            try:
+                # Extract filename from URL
+                filename = image_url.split('/')[-1]
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                
+                # Delete the file if it exists
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"DELETE SUCCESS: Deleted file {file_path}")
+            except Exception as e:
+                print(f"DELETE WARNING: Error deleting file: {e}")
+        
+        # Remove from shared messages
+        del shared_messages[index]
+        
+        # Save changes
+        save_messages()
+        
+        # Notify all clients
+        socketio.emit('content_deleted', {'id': index}, broadcast=True)
+        
+        print(f"DELETE SUCCESS: Deleted {message_type} message at index {index}")
+        return jsonify({'success': True, 'message': f'Deleted {message_type} message'})
+        
     except Exception as e:
+        print(f"DELETE ERROR: Exception in delete_message: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/get_all_media')
