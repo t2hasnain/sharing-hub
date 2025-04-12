@@ -153,9 +153,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(data => {
                     currentUser = data;
                     sendTextMessage(message);
+                    // Reload the page after a short delay
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
                 });
         } else {
             sendTextMessage(message);
+            // Reload the page after a short delay
+            setTimeout(() => {
+                location.reload();
+            }, 500);
         }
         
         closeModal();
@@ -182,9 +190,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(data => {
                     currentUser = data;
                     uploadAndSendImage(file);
+                    // Reload the page after a short delay to allow image to be processed
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
                 });
         } else {
             uploadAndSendImage(file);
+            // Reload the page after a short delay to allow image to be processed
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
         }
         
         closeModal();
@@ -209,32 +225,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Handle delete button clicks
-    document.addEventListener('click', (e) => {
+    // Replace the existing delete button handler with this simpler version
+    document.addEventListener('click', function(e) {
         if (e.target.closest('.delete-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
             const button = e.target.closest('.delete-btn');
             const id = button.getAttribute('data-id');
             
+            console.log('Delete button clicked for item ID:', id);
+            
+            // Show delete in progress
+            const item = button.closest('.content-item');
+            item.style.opacity = '0.5';
+            
+            // Simple fetch to delete
             fetch('/delete_message', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: id })
+                body: JSON.stringify({ id: parseInt(id) })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Remove the item from the grid
-                    const item = button.closest('.content-item');
-                    item.remove();
-                    
-                    // If it was the last item, show "no content" message
-                    if (contentGrid && contentGrid.children.length === 0) {
-                        location.reload();
-                    }
-                }
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                console.log('Delete response:', data);
+                
+                // Force reload regardless of success - solves index issues
+                setTimeout(function() {
+                    console.log('Reloading page after delete...');
+                    window.location.href = window.location.href;
+                }, 300);
+            })
+            .catch(function(error) {
+                console.error('Error deleting:', error);
+                // Reload anyway to ensure consistent state
+                window.location.reload();
             });
+            
+            return false;
         }
     });
     
@@ -402,42 +434,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     newEmptyBtn.addEventListener('click', openModal);
                 }
             }
-        }
-    });
-    
-    // Handle delete button clicks with improved handling
-    document.addEventListener('click', (e) => {
-        if (e.target.closest('.delete-btn')) {
-            const button = e.target.closest('.delete-btn');
-            const id = button.getAttribute('data-id');
-            const item = button.closest('.content-item');
-            
-            // Immediately add a deleting state to the item to provide visual feedback
-            item.style.opacity = '0.5';
-            item.style.pointerEvents = 'none';
-            
-            fetch('/delete_message', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ id: id })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    // Revert visual state if deletion failed
-                    item.style.opacity = '1';
-                    item.style.pointerEvents = 'auto';
-                    console.error('Failed to delete item:', data.error);
-                }
-            })
-            .catch(error => {
-                // Revert visual state on error
-                item.style.opacity = '1';
-                item.style.pointerEvents = 'auto';
-                console.error('Error deleting item:', error);
-            });
         }
     });
 }); 

@@ -5,8 +5,8 @@
     --secondary-bg-color: #ffffff;
     --text-color: #333333;
     --secondary-text-color: #666666;
-    --primary-color: #4a6ef5;
-    --primary-dark: #3755d3;
+    --primary-color: #4a6ef5; /* Light purple as primary color */
+    --primary-dark: #4a6ef5; /* Darker version of light purple */
     --border-color: #e0e0e0;
     --shadow-color: rgba(0, 0, 0, 0.1);
     --success-color: #28a745;
@@ -21,8 +21,8 @@ html[data-theme='dark'] {
     --secondary-bg-color: #2a2a2a;
     --text-color: #f0f0f0;
     --secondary-text-color: #b0b0b0;
-    --primary-color: #5d7aff;
-    --primary-dark: #455ec9;
+    --primary-color: #5d7aff; /* Lighter purple for dark theme */
+    --primary-dark: #5d7aff; /* Original purple for dark theme */
     --border-color: #444444;
     --shadow-color: rgba(0, 0, 0, 0.3);
 }
@@ -39,7 +39,7 @@ html {
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
     color: var(--text-color);
     background-color: var(--background-color);
@@ -87,10 +87,26 @@ img {
 .logo {
     font-size: 1.5rem;
     font-weight: bold;
+    display: flex;
+    align-items: center;
+}
+
+.logo a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.logo-image {
+    height: 32px;
+    width: auto;
+    margin-right: 8px;
 }
 
 .logo-text {
-    color: var(--primary-color);
+    color: var(--text-color);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
 }
 
 .nav-links ul {
@@ -120,6 +136,64 @@ img {
 
 .nav-links a:hover:after {
     width: 100%;
+}
+
+/* GitHub link in navigation */
+.github-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #333;
+    color: white !important;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    position: relative;
+}
+
+.github-link:hover {
+    background-color: #24292e;
+    transform: translateY(-2px);
+}
+
+.github-link:after {
+    display: none;
+}
+
+.github-link:hover:before {
+    content: 'Star us on GitHub!';
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+.github-link:hover:after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background-color: #333;
+    z-index: 9;
+}
+
+html[data-theme='dark'] .github-link {
+    background-color: #24292e;
+}
+
+html[data-theme='dark'] .github-link:hover {
+    background-color: #1a1e21;
 }
 
 /* Hamburger Menu */

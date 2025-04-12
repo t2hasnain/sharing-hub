@@ -6,6 +6,9 @@
     <title>Zephy - {% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -13,6 +16,7 @@
         <nav class="navbar">
             <div class="logo">
                 <a href="/">
+                    <img src="{{ url_for('static', filename='images/logoZ.png') }}" alt="Zephy Logo" class="logo-image">
                     <span class="logo-text">Zephy</span>
                 </a>
             </div>
@@ -29,6 +33,7 @@
                     <li><a href="/chat">Chat</a></li>
                     <li><a href="/about">About</a></li>
                     <li><a href="/privacy">Privacy</a></li>
+                    <li><a href="https://github.com/t2hasnain/sharing-hub" target="_blank" class="github-link"><i class="fab fa-github"></i> Open Source</a></li>
                 </ul>
             </div>
             <div class="hamburger">
@@ -49,6 +54,7 @@
             <div class="footer-links">
                 <a href="/privacy">Privacy Policy</a>
                 <a href="/about">About Us</a>
+                <a href="https://github.com/t2hasnain/sharing-hub" target="_blank"><i class="fab fa-github"></i> GitHub</a>
             </div>
         </div>
     </footer>

@@ -108,7 +108,8 @@ html[data-theme='dark'] .user-item:hover {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    max-height: calc(100% - 130px); /* Fix for desktop scroll issues */
+    max-height: calc(100vh - 300px); /* Fixed height calculation for better scrolling */
+    overflow-x: hidden;
 }
 
 .message {
